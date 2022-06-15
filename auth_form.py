@@ -43,6 +43,7 @@ class Ui_MainWindow(object):
         self.pass_txt = QtWidgets.QLineEdit(self.centralwidget)
         self.pass_txt.setGeometry(QtCore.QRect(30, 150, 281, 20))
         self.pass_txt.setObjectName("pass_txt")
+        self.pass_txt.setEchoMode(QLineEdit.Password)
         self.login_btn = QtWidgets.QPushButton(self.centralwidget)
         self.login_btn.setGeometry(QtCore.QRect(90, 220, 151, 41))
         self.login_btn.setObjectName("login_btn")
