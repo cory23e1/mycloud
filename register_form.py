@@ -51,6 +51,7 @@ class Ui_MainWindow(object):
         self.label_5.setGeometry(QtCore.QRect(40, 220, 47, 13))
         self.label_5.setObjectName("label_5")
         self.password_txt = QtWidgets.QLineEdit(self.centralwidget)
+        self.password_txt.setEchoMode(QLineEdit.Password)
         self.password_txt.setGeometry(QtCore.QRect(40, 240, 521, 20))
         font = QtGui.QFont()
         font.setStrikeOut(False)
@@ -82,6 +83,8 @@ class Ui_MainWindow(object):
         self.register_btn.setText(_translate("MainWindow", "Зарегистрировать"))
 
     def open_auth_form(self):
+        f.put_val_in_local_storage('login','')
+        f.put_val_in_local_storage('password','')
         self.window = QMainWindow()
         self.ui = auth_form.Ui_MainWindow()
         self.ui.setupUi(self.window)
@@ -163,7 +166,6 @@ class Ui_MainWindow(object):
         }
         get_static_key_response = requests.post('https://iam.api.cloud.yandex.net/iam/aws-compatibility/v1/accessKeys',headers=headers, json=get_static_key_json)
         return get_static_key_response.json()
-
 
 if __name__ == "__main__":
     import sys

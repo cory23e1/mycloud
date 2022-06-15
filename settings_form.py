@@ -17,7 +17,6 @@ import cloud_storage_form
 
 class Ui_MainWindow(object):
     dirlist = f.get_val_in_local_storage('local_path')
-    cs = cloud_storage_form
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -62,6 +61,7 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         self.set_current_user()
         self.change_user_btn.clicked.connect(self.logout)
+        #self.change_user_btn.clicked.connect(cloud_storage_form.close_cs_form)
         self.change_user_btn.clicked.connect(MainWindow.close)
         self.browseLocalPath_btn.clicked.connect(self.set_local_directory)
         self.load_local_directory()
@@ -88,11 +88,15 @@ class Ui_MainWindow(object):
         self.ui.setupUi(self.window)
         self.window.show()
 
+    def close_cs_form(self):
+        cs_ui = cloud_storage_form.Ui_MainWindow()
+        cs_ui.close_cloud_storage_form()
+
     def logout(self):
-        f.put_val_in_local_storage('service_acc_id','')
-        f.put_val_in_local_storage('static_key_id','')
-        f.put_val_in_local_storage('static_secret_key','')
-        f.put_val_in_local_storage('login','')
+        #f.put_val_in_local_storage('service_acc_id','')
+        #f.put_val_in_local_storage('static_key_id','')
+        #f.put_val_in_local_storage('static_secret_key','')
+        #f.put_val_in_local_storage('login','')
         self.open_auth_form()
 
     def load_local_directory(self):
@@ -110,8 +114,8 @@ class Ui_MainWindow(object):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    settings_MainWindow = QtWidgets.QMainWindow()
+    MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
-    ui.setupUi(settings_MainWindow)
-    settings_MainWindow.show()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
     sys.exit(app.exec_())
