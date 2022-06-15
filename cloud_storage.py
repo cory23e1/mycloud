@@ -1,12 +1,11 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-#import design
+import cloud_storage_form
 from s3 import S3
 import funcs as f
 import os
 import settings_form
-import cloud_storage_form
 
 class CloudStorage(cloud_storage_form.Ui_MainWindow, QMainWindow):
     current_path = ''
@@ -55,23 +54,11 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow, QMainWindow):
             dialog.setNameFilter(filter)
             if initialFilter:
                 dialog.selectNameFilter(initialFilter)
-
-        # by default, if a directory is opened in file listing mode,
-        # QFileDialog.accept() shows the contents of that directory, but we
-        # need to be able to "open" directories as we can do with files, so we
-        # just override accept() with the default QDialog implementation which
-        # will just return exec_()
         dialog.accept = lambda: QDialog.accept(dialog)
-
-        # there are many item views in a non-native dialog, but the ones displaying
-        # the actual contents are created inside a QStackedWidget; they are a
-        # QTreeView and a QListView, and the tree is only used when the
-        # viewMode is set to QFileDialog.Details, which is not this case
         stackedWidget = dialog.findChild(QStackedWidget)
         view = stackedWidget.findChild(QListView)
         view.selectionModel().selectionChanged.connect(updateText)
         lineEdit = dialog.findChild(QLineEdit)
-        # clear the line edit contents whenever the current directory changes
         dialog.directoryEntered.connect(lambda: lineEdit.setText(''))
         dialog.exec_()
         return dialog.selectedFiles()
