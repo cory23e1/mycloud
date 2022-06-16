@@ -58,11 +58,6 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-        self.register_link.clicked.connect(self.open_register_form)
-        self.register_link.clicked.connect(MainWindow.close)
-        self.login_btn.clicked.connect(self.login)
-        #self.login_btn.clicked.connect(MainWindow.close)
-        self.load_log_n_pass()
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -73,69 +68,6 @@ class Ui_MainWindow(object):
         self.login_btn.setText(_translate("MainWindow", "Вход"))
         self.register_link.setToolTip(_translate("MainWindow", "зарегайся"))
         self.register_link.setText(_translate("MainWindow", "Регистрация"))
-
-    def load_log_n_pass(self):
-        login = f.get_val_in_local_storage('login')
-        password = f.get_val_in_local_storage('password')
-        self.login_txt.setText(login)
-        self.pass_txt.setText(password)
-        print(login)
-        print(password)
-
-    def open_register_form(self):
-        self.window = QMainWindow()
-        self.ui = register_form.Ui_MainWindow()
-        self.ui.setupUi(self.window)
-        self.window.show()
-
-    def open_cloud_storage_form(self):
-        self.window = QMainWindow()
-        self.ui = cloud_storage_form.Ui_MainWindow()
-        self.ui.setupUi(self.window)
-        self.window.show()
-
-    def login(self):
-        try:
-            login = self.login_txt.text()
-            password = self.pass_txt.text()
-            if login!='' and password!='':
-                db = database
-                raw_id = db.SQL.select(None,'accounts','id','login',str(login))
-                formated_id = str(" ".join(raw_id))
-                print(formated_id)
-                if formated_id != '':
-                    raw_password = db.SQL.select(None,'accounts','password','id',formated_id)
-                    formated_password = str(" ".join(raw_password))
-                    if formated_password == password:
-                        raw_login = db.SQL.select(None, 'accounts', 'login', 'id', formated_id)
-                        raw_service_acc_id = db.SQL.select(None, 'accounts', 'service_acc_id', 'id', formated_id)
-                        raw_static_key_id = db.SQL.select(None, 'accounts', 'static_key_id', 'id', formated_id)
-                        raw_static_secret_key =  db.SQL.select(None, 'accounts', 'static_secret_key', 'id', formated_id)
-
-                        formated_login = str(" ".join(raw_login))
-                        formated_service_acc_id = str(" ".join(raw_service_acc_id))
-                        formated_static_key_id = str(" ".join(raw_static_key_id))
-                        formated_static_secret_key = str(" ".join(raw_static_secret_key))
-                        print(formated_login)
-                        print(formated_service_acc_id)
-
-                        f.put_val_in_local_storage('service_acc_id',formated_service_acc_id)
-                        f.put_val_in_local_storage('static_key_id', formated_static_key_id)
-                        f.put_val_in_local_storage('static_secret_key', formated_static_secret_key)
-                        f.put_val_in_local_storage('login',formated_login)
-                        f.put_val_in_local_storage('password',formated_password)
-                        print('успешно')
-                        self.open_cloud_storage_form()
-                        sys.exit()
-                    else:
-                        f.ShowMessageBox('Ошибка', 'Пароль неверный')
-                else:
-                    f.ShowMessageBox('Ошибка', 'Такой пользователь не зарегистрирован')
-            else:
-                f.ShowMessageBox('Ошибка','Не все поля заполнены')
-        except Exception as error:
-            print(str(error))
-
 
 if __name__ == "__main__":
     import sys

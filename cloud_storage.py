@@ -1,20 +1,26 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+
 import cloud_storage_form
 from s3 import S3
 import funcs as f
 import os
-import settings_form
+import settings
+import auth
+import sys
 
-class CloudStorage(cloud_storage_form.Ui_MainWindow, QMainWindow):
+class CloudStorage(QMainWindow, cloud_storage_form.Ui_MainWindow):
     current_path = ''
     current_key = ''
     selected_key = ''
 
-    def __init__(self):
-        super(CloudStorage, self).__init__()
+    def __init__(self,parent=None):
+        #super(CloudStorage, self).__init__()
+        QWidget.__init__(self, parent)
+        self.setupUi(self)
         self.fill_object_table('', '')
+        self.set_current_user()
         self.tv_cloudStorage.doubleClicked.connect(self.open_folder_or_download_obj_by_dblclck)
         self.tv_cloudStorage.clicked.connect(self.select_table_row)
         self.btn_home.clicked.connect(self.go_home)
@@ -22,46 +28,68 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow, QMainWindow):
         self.btn_upload.clicked.connect(self.upload_files_to_cloud)
         self.btn_del.clicked.connect(self.del_file_from_cloud)
         self.btn_download.clicked.connect(self.download_file_from_cloud)
-        self.OpenSettinsAction.triggered.connect(self.open_settings_form)
+        #self.OpenSettinsAction.triggered.connect(self.open_settings_form)
+        self.OpenSettinsAction.triggered.connect(self.open_sett_win)
         self.change_curr_path_txt("")
+        self.change_acc_btn.clicked.connect(self.logout)
+
+    def set_current_user(self):
+        try:
+            current_user = f.get_val_in_local_storage('login')
+            self.current_user_lbl.setText("Текущий пользователь: " + current_user)
+        except Exception:
+            pass
+
+    #открыть настройки
+    def open_sett_win(self):
+        sett_win = settings.Settings(self)
+        sett_win.show_window()
+
+    #разлогиниться
+    def logout(self):
+        self.close_window()
+        auth_win = auth.Auth(self)
+        auth_win.show_window()
+
+    #открытие cloud_storage
+    def show_window(self):
+        self.show()
+
+    #закрытие cloud_storage
+    def close_window(self):
+        self.close()
 
     def change_curr_path_txt(self,path):
         self.curr_directory_txt.setText("ist-pnipu-bukcet/"+path)
         #pass
 
-    def open_settings_form(self):
-        self.window = QMainWindow()
-        self.ui = settings_form.Ui_MainWindow()
-        self.ui.setupUi(self.window)
-        self.window.show()
-
-    def getOpenFilesAndDirs(parent=None, caption='', directory='', filter='', initialFilter='', options=None):
-        def updateText():
-            # update the contents of the line edit widget with the selected files
-            selected = []
-            for index in view.selectionModel().selectedRows():
-                selected.append('"{}"'.format(index.data()))
-            lineEdit.setText(' '.join(selected))
-
-        dialog = QFileDialog(parent, windowTitle=caption)
-        dialog.setFileMode(dialog.ExistingFiles)
-        if options:
-            dialog.setOptions(options)
-        dialog.setOption(dialog.DontUseNativeDialog, True)
-        if directory:
-            dialog.setDirectory(directory)
-        if filter:
-            dialog.setNameFilter(filter)
-            if initialFilter:
-                dialog.selectNameFilter(initialFilter)
-        dialog.accept = lambda: QDialog.accept(dialog)
-        stackedWidget = dialog.findChild(QStackedWidget)
-        view = stackedWidget.findChild(QListView)
-        view.selectionModel().selectionChanged.connect(updateText)
-        lineEdit = dialog.findChild(QLineEdit)
-        dialog.directoryEntered.connect(lambda: lineEdit.setText(''))
-        dialog.exec_()
-        return dialog.selectedFiles()
+    # def getOpenFilesAndDirs(parent=None, caption='', directory='', filter='', initialFilter='', options=None):
+    #     def updateText():
+    #         # update the contents of the line edit widget with the selected files
+    #         selected = []
+    #         for index in view.selectionModel().selectedRows():
+    #             selected.append('"{}"'.format(index.data()))
+    #         lineEdit.setText(' '.join(selected))
+    #
+    #     dialog = QFileDialog(parent, windowTitle=caption)
+    #     dialog.setFileMode(dialog.ExistingFiles)
+    #     if options:
+    #         dialog.setOptions(options)
+    #     dialog.setOption(dialog.DontUseNativeDialog, True)
+    #     if directory:
+    #         dialog.setDirectory(directory)
+    #     if filter:
+    #         dialog.setNameFilter(filter)
+    #         if initialFilter:
+    #             dialog.selectNameFilter(initialFilter)
+    #     dialog.accept = lambda: QDialog.accept(dialog)
+    #     stackedWidget = dialog.findChild(QStackedWidget)
+    #     view = stackedWidget.findChild(QListView)
+    #     view.selectionModel().selectionChanged.connect(updateText)
+    #     lineEdit = dialog.findChild(QLineEdit)
+    #     dialog.directoryEntered.connect(lambda: lineEdit.setText(''))
+    #     dialog.exec_()
+    #     return dialog.selectedFiles()
 
     def upload_files_to_cloud(self):
         try:
@@ -239,7 +267,7 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow, QMainWindow):
         self.fill_object_table(self.current_path, '')
 
 if __name__ == '__main__':
-    app = QApplication([])
+    app = QApplication(sys.argv)
     cs = CloudStorage()
     cs.show()
     app.exec_()

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1239</width>
-    <height>722</height>
+    <height>731</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,7 +46,7 @@
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>img/back-arrow_icon-icons.com_72866.ico</normaloff>img/back-arrow_icon-icons.com_72866.ico</iconset>
+      <normaloff>../img/back-arrow_icon-icons.com_72866.ico</normaloff>../img/back-arrow_icon-icons.com_72866.ico</iconset>
     </property>
    </widget>
    <widget class="QPushButton" name="btn_del">
@@ -63,7 +63,7 @@
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>img/waste_bin_delete_remove_recycle_icon_123840.ico</normaloff>img/waste_bin_delete_remove_recycle_icon_123840.ico</iconset>
+      <normaloff>../img/waste_bin_delete_remove_recycle_icon_123840.ico</normaloff>../img/waste_bin_delete_remove_recycle_icon_123840.ico</iconset>
     </property>
    </widget>
    <widget class="QPushButton" name="btn_upload">
@@ -80,7 +80,7 @@
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>img/cloud-upload-symbol-with-an-up-arrow-inside_icon-icons.com_56539.ico</normaloff>img/cloud-upload-symbol-with-an-up-arrow-inside_icon-icons.com_56539.ico</iconset>
+      <normaloff>../img/cloud-upload-symbol-with-an-up-arrow-inside_icon-icons.com_56539.ico</normaloff>../img/cloud-upload-symbol-with-an-up-arrow-inside_icon-icons.com_56539.ico</iconset>
     </property>
    </widget>
    <widget class="QPushButton" name="btn_home">
@@ -97,7 +97,7 @@
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>img/home_icon-icons.com_73532.ico</normaloff>img/home_icon-icons.com_73532.ico</iconset>
+      <normaloff>../img/home_icon-icons.com_73532.ico</normaloff>../img/home_icon-icons.com_73532.ico</iconset>
     </property>
    </widget>
    <widget class="QPushButton" name="btn_download">
@@ -114,7 +114,7 @@
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>img/download-to-storage-drive_icon-icons.com_73590.ico</normaloff>img/download-to-storage-drive_icon-icons.com_73590.ico</iconset>
+      <normaloff>../img/download-to-storage-drive_icon-icons.com_73590.ico</normaloff>../img/download-to-storage-drive_icon-icons.com_73590.ico</iconset>
     </property>
    </widget>
    <widget class="QLineEdit" name="curr_directory_txt">
