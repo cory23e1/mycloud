@@ -1,26 +1,35 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-
+from PyQt5 import QtCore, QtGui, QtWidgets
 import auth_form
 import funcs as f
 import database
 import register
+import cloud_storage
 import sys
 
-class Auth(QMainWindow,auth_form.Ui_MainWindow):
+#class Auth(auth_form.Ui_MainWindow,QMainWindow):
+class Auth(auth_form.Ui_MainWindow,QMainWindow):
     def __init__(self,parent=None):
-        QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
+        self.setWindowFlags(QtCore.Qt.Window)
+        self.setWindowModality(QtCore.Qt.WindowModal)
+        #super(Auth, self).__init__(parent)
         #super(Auth, self).__init__()
         self.setupUi(self)
-
-        self.register_link.clicked.connect(self.open_reg)
+        self.register_link.clicked.connect(self.open_reg_n_close)
         self.login_btn.clicked.connect(self.login)
         self.load_log_n_pass()
 
-    def open_reg(self):
+    def open_reg_n_close(self):
+        self.close_window()
         reg = register.Register(self)
         reg.show_window()
+
+    def open_cs(self):
+        cs = cloud_storage.CloudStorage(self)
+        cs.show_window()
 
     def show_window(self):
         self.show()
@@ -67,8 +76,8 @@ class Auth(QMainWindow,auth_form.Ui_MainWindow):
                         f.put_val_in_local_storage('login',formated_login)
                         f.put_val_in_local_storage('password',formated_password)
                         print('успешно')
-                        self.open_cloud_storage_form()
-                        #sys.exit()
+                        self.close_window()
+                        self.open_cs()
                     else:
                         f.ShowMessageBox('Ошибка', 'Пароль неверный')
                 else:
@@ -79,7 +88,7 @@ class Auth(QMainWindow,auth_form.Ui_MainWindow):
             print(str(error))
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    app = QApplication([])
     auth = Auth()
     auth.show()
     app.exec_()

@@ -8,12 +8,15 @@ import auth_form
 import cloud_storage
 import sys
 
-class Settings(QMainWindow, settings_form.Ui_MainWindow):
+class Settings(settings_form.Ui_MainWindow,QMainWindow):
     dirlist = f.get_val_in_local_storage('local_path')
 
     def __init__(self,parent=None):
         #super(Settings, self).__init__(self, parent)
         QtWidgets.QWidget.__init__(self, parent)
+        self.setWindowFlags(QtCore.Qt.Window)
+        self.setWindowModality(QtCore.Qt.WindowModal)
+        #super(Settings, self).__init__(parent)
         self.setupUi(self)
         #self.change_user_btn.clicked.connect(self.logout)
         #self.change_user_btn.clicked.connect(self.close)
@@ -36,15 +39,22 @@ class Settings(QMainWindow, settings_form.Ui_MainWindow):
         self.path_txt.setText(local_path)
 
     def set_local_directory(self):
-        self.dirlist = QFileDialog.getExistingDirectory(None, "Выбрать папку", ".") + '/'
-        self.path_txt.setText(self.dirlist)
+        try:
+            self.dirlist = QFileDialog.getExistingDirectory(None, "Выбрать папку", ".") + '/'
+            if self.dirlist!='/':
+                self.path_txt.setText(self.dirlist)
+            else:
+                pass
+        except Exception as ex:
+            print('ниче не выбрано')
+            print(ex)
 
     def confirm_settings(self):
         f.put_val_in_local_storage('local_path', self.dirlist)
         f.ShowMessageBox('Успешно', 'Локальный путь ' + self.dirlist + ' сохранен')
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    app = QApplication([])
     sett = Settings()
     sett.show()
     app.exec_()

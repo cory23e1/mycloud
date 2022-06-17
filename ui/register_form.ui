@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>591</width>
+    <width>385</width>
     <height>358</height>
    </rect>
   </property>
@@ -19,7 +19,7 @@
      <rect>
       <x>40</x>
       <y>80</y>
-      <width>521</width>
+      <width>311</width>
       <height>20</height>
      </rect>
     </property>
@@ -27,8 +27,8 @@
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>240</x>
-      <y>10</y>
+      <x>130</x>
+      <y>20</y>
       <width>121</width>
       <height>31</height>
      </rect>
@@ -62,7 +62,7 @@
      <rect>
       <x>40</x>
       <y>130</y>
-      <width>521</width>
+      <width>311</width>
       <height>22</height>
      </rect>
     </property>
@@ -98,7 +98,7 @@
      <rect>
       <x>40</x>
       <y>190</y>
-      <width>521</width>
+      <width>311</width>
       <height>20</height>
      </rect>
     </property>
@@ -121,7 +121,7 @@
      <rect>
       <x>40</x>
       <y>240</y>
-      <width>521</width>
+      <width>311</width>
       <height>20</height>
      </rect>
     </property>
@@ -140,14 +140,41 @@
    <widget class="QPushButton" name="register_btn">
     <property name="geometry">
      <rect>
-      <x>190</x>
-      <y>290</y>
+      <x>80</x>
+      <y>300</y>
       <width>231</width>
       <height>51</height>
      </rect>
     </property>
     <property name="text">
      <string>Зарегистрировать</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="login_btn">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>270</y>
+      <width>111</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="font">
+     <font>
+      <underline>true</underline>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(0, 0, 255);</string>
+    </property>
+    <property name="text">
+     <string>Уже есть аккаунт?</string>
     </property>
    </widget>
   </widget>

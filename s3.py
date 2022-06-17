@@ -78,18 +78,25 @@ class S3():
 
     def download(bucket_name,objects,object_name):
         client = S3.client(None)
+
         for object_path in objects:
+            #print(object_path, objjj)
             local_path = f.get_val_in_local_storage('local_path')+object_path
-            local_path_without_obj_name = local_path.replace(object_name,'')
+            local_path_without_obj_name = local_path.replace(object_path,'')
+            print(local_path)
             print(local_path_without_obj_name)
+            #print(local_path_without_obj_name)
             # если папки не существует
             if not os.path.exists(local_path_without_obj_name):
+                # print(object_path)
+                # print(local_path)
                 os.makedirs(local_path_without_obj_name)
-                client.download_file(bucket_name, object_path, local_path)
+                #client.download_file(bucket_name, object_path, local_path)
             else:
                 # если файла не существует
                 if not os.path.isfile(local_path):
-                    client.download_file(bucket_name, object_path, local_path)
+                    pass
+                    #client.download_file(bucket_name, object_path, local_path)
                 else:
                     print('файл '+object_path+ ' существует')
 
@@ -109,11 +116,27 @@ class S3():
             client.upload_file(obj, bucket_name, new_path+filename)
             #print(new_path)
 
+    # def delete(bucket_name, objects, current_path):
+    #     for obj in objects:
+    #         print(current_path + obj)
+    #         client.delete_object(Bucket=bucket_name, Key=current_path + obj)
+
     def delete(bucket_name,objects,current_path):
         client = S3.client(None)
+        files = []
+
         for obj in objects:
-            print(current_path+obj)
-            client.delete_object(Bucket=bucket_name, Key=current_path+obj)
+            if '/' in obj:
+                files = S3.get_object_list('ist-pnipu-bucket', obj, '')
+                print(files)
+                        #client.delete_object(Bucket=bucket_name, Key=item2['Key'])
+                #print(files)
+                #client.delete_object(Bucket=bucket_name, Key=current_path+files_in_folder)
+            else:
+                print(current_path+obj)
+                client.delete_object(Bucket=bucket_name, Key=current_path+obj)
+        for item in files:
+            print(item['Key'])
 
     def uploadDirectory(path, bucketname):
         client = S3.client(None)

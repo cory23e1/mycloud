@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-
+from PyQt5 import QtCore, QtGui, QtWidgets
 import cloud_storage_form
 from s3 import S3
 import funcs as f
@@ -10,14 +10,15 @@ import settings
 import auth
 import sys
 
-class CloudStorage(QMainWindow, cloud_storage_form.Ui_MainWindow):
+class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
     current_path = ''
     current_key = ''
     selected_key = ''
 
     def __init__(self,parent=None):
         #super(CloudStorage, self).__init__()
-        QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
+        #super.__init__(self)
         self.setupUi(self)
         self.fill_object_table('', '')
         self.set_current_user()
@@ -28,7 +29,6 @@ class CloudStorage(QMainWindow, cloud_storage_form.Ui_MainWindow):
         self.btn_upload.clicked.connect(self.upload_files_to_cloud)
         self.btn_del.clicked.connect(self.del_file_from_cloud)
         self.btn_download.clicked.connect(self.download_file_from_cloud)
-        #self.OpenSettinsAction.triggered.connect(self.open_settings_form)
         self.OpenSettinsAction.triggered.connect(self.open_sett_win)
         self.change_curr_path_txt("")
         self.change_acc_btn.clicked.connect(self.logout)
@@ -113,6 +113,8 @@ class CloudStorage(QMainWindow, cloud_storage_form.Ui_MainWindow):
     def download_file_from_cloud(self):
         # объявление пустого списка объектов
         file_names = []
+        file_names_without_dir = []
+        #print(file_names)
         # подсчет количества строк в таблице объектов
         row_count = self.tv_cloudStorage.model().rowCount()
         # проверка на отсутствие объектов в бакете
@@ -121,15 +123,21 @@ class CloudStorage(QMainWindow, cloud_storage_form.Ui_MainWindow):
                 check = self.tv_cloudStorage.model().item(row, 0).checkState()
                 # проверка состояния чекбокса выбора
                 if check == 2:
-                    file_names.append(self.tv_cloudStorage.model().index(row, 1).data())
+                    file_names.append(self.current_path+self.tv_cloudStorage.model().index(row, 1).data())
+                    file_names_without_dir.append(self.tv_cloudStorage.model().index(row, 1).data())
+            # print(file_names)
+            # print(file_names_without_dir)
+            #S3.download('ist-pnipu-bucket', file_names, file_names_without_dir)
             # проверка если один из чекбоксов поменял состояние
             if not all(item == 0 for item in file_names):
+                print(file_names)
                 # скачивание файлов из бакета
-                S3.download('ist-pnipu-bucket', file_names, self.current_path)
+                #S3.download('ist-pnipu-bucket', file_names, self.current_path)
+                S3.download('ist-pnipu-bucket', file_names, file_names_without_dir)
                 #обновление списка объектов
                 self.fill_object_table(self.current_path, '')
                 #вывод сообщения об успешном сохранении на локальный диск
-                f.ShowMessageBox('Успешно','Файлы '+str(file_names)+' сохранены на локальный диск')
+                #f.ShowMessageBox('Успешно','Файлы '+str(file_names)+' сохранены на локальный диск')
             elif self.selected_key != '':
                 file_names.append(self.selected_key)
                 S3.download('ist-pnipu-bucket', file_names, self.selected_key)
@@ -138,6 +146,7 @@ class CloudStorage(QMainWindow, cloud_storage_form.Ui_MainWindow):
                 f.ShowMessageBox('Сохранение','Не выбраны файлы для сохранения')
         else:
             f.ShowMessageBox('Сохранение','Нет файлов для сохранения')
+        #print(file_names)
 
     def del_file_from_cloud(self):
         file_names = []
@@ -171,32 +180,30 @@ class CloudStorage(QMainWindow, cloud_storage_form.Ui_MainWindow):
         except:
             pass
 
-    def append_row_object_table(self, key, date, size, status):
+    def append_row_object_table(self, key, date, size):
         item0 = QStandardItem()
         item0.setCheckState(Qt.CheckState.Unchecked)
         item0.setCheckable(True)
         item1 = QStandardItem(key)
         item2 = QStandardItem(date)
         item3 = QStandardItem(size)
-        item4 = QStandardItem(status)
-        self.tv_cloudStorage.model().appendRow([item0, item1, item2, item3, item4])
+        #item4 = QStandardItem(status)
+        self.tv_cloudStorage.model().appendRow([item0, item1, item2, item3])
 
     def fill_object_table(self, directory, delimiter):
         self.selected_key = ''
         model = QStandardItemModel()
-        model.setHorizontalHeaderLabels(["Выбор", "Имя", "Дата", "Размер", "Состояние"])
+        model.setHorizontalHeaderLabels(["Выбор", "Имя", "Дата", "Размер"])
         self.tv_cloudStorage.setModel(model)
-        self.tv_cloudStorage.header().resizeSection(0, 50)
+        self.tv_cloudStorage.header().resizeSection(0, 80)
         self.tv_cloudStorage.header().resizeSection(1, 300)
         service_acc_id = f.get_val_in_local_storage('service_acc_id')
         try:
             # получение объектов из бакета
             data = S3.get_object_list('ist-pnipu-bucket', directory, delimiter)
-            print("это из лок.хран - "+service_acc_id)
             for obj in data:
                 key_name = obj['Key']
                 object_owner = obj['Owner']['ID']
-                print("это из с3 облака - "+object_owner)
                 if object_owner == service_acc_id:
                     # проверка есть ли сейчас что то в переменной текущего пути
                     if self.current_path == "":
@@ -207,9 +214,9 @@ class CloudStorage(QMainWindow, cloud_storage_form.Ui_MainWindow):
                                 pass
                             else:
                                 #вставка строки с данными объекта
-                                self.append_row_object_table(key_name,str(obj['LastModified']),f.convert_size(obj['Size']),'облако')
+                                self.append_row_object_table(key_name,str(obj['LastModified'])[:19],f.convert_size(obj['Size']))
                         else:
-                            self.append_row_object_table(key_name, str(obj['LastModified']), f.convert_size(obj['Size']),'облако')
+                            self.append_row_object_table(key_name, str(obj['LastModified'])[:19], f.convert_size(obj['Size']))
                     else:
                         # удаление имени папки в наименовании объекта если пользователь находится в папке
                         elem_of_split_key_name = ''
@@ -221,7 +228,7 @@ class CloudStorage(QMainWindow, cloud_storage_form.Ui_MainWindow):
                         if replaced_key_name == self.current_path or replaced_key_name == '' or elem_of_split_key_name != '':
                             pass
                         else:
-                            self.append_row_object_table(replaced_key_name, str(obj['LastModified']), f.convert_size(obj['Size']),'облако')
+                            self.append_row_object_table(replaced_key_name, str(obj['LastModified'])[:19], f.convert_size(obj['Size']))
                 else:
                     pass
         except Exception as error:
@@ -266,8 +273,12 @@ class CloudStorage(QMainWindow, cloud_storage_form.Ui_MainWindow):
         print('Текущий ключ - ' + self.current_key)
         self.fill_object_table(self.current_path, '')
 
-if __name__ == '__main__':
+def main():
     app = QApplication(sys.argv)
+    # app.setQuitOnLastWindowClosed(True)
     cs = CloudStorage()
     cs.show()
     app.exec_()
+
+if __name__ == '__main__':
+    main()

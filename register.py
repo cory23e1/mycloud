@@ -1,25 +1,36 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+from PyQt5 import QtCore, QtGui, QtWidgets
 import requests
 import register_form
 import database
 import funcs as f
 import auth
+import cloud_storage
 import sys
 
-class Register(QMainWindow,register_form.Ui_MainWindow):
+class Register(register_form.Ui_MainWindow,QMainWindow):
     IAM_TOKEN = ''
     folder_id = ''
 
     def __init__(self,parent=None):
         #super(Register, self).__init__()
-        QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
+        self.setWindowFlags(QtCore.Qt.Window)
+        self.setWindowModality(QtCore.Qt.WindowModal)
+        #super(Register, self).__init__(parent)
         self.setupUi(self)
 
         self.register_btn.clicked.connect(self.add_acc_to_bd)
         #self.register_btn.clicked.connect(MainWindow.close)
         self.load_roles_from_bd()
+        #self.quit.triggered.connect(self.open_auth_form)
+        self.login_btn.clicked.connect(self.close_window)
+        self.login_btn.clicked.connect(self.open_auth_form)
+
+    def cs_show(self):
+        cs = cloud_storage
 
     def show_window(self):
         self.show()
@@ -27,9 +38,11 @@ class Register(QMainWindow,register_form.Ui_MainWindow):
     def close_window(self):
         self.close()
 
-    def open_auth_form(self):
+    def reset_auth(self):
         f.put_val_in_local_storage('login','')
         f.put_val_in_local_storage('password','')
+
+    def open_auth_form(self):
         auth_win = auth.Auth(self)
         auth_win.show_window()
 
@@ -56,6 +69,8 @@ class Register(QMainWindow,register_form.Ui_MainWindow):
             values = [service_acc_name, password, role, fio, service_acc_id, static_key_id, static_secret_key]
             database.SQL.insert('', fields, values, 'accounts')
             f.ShowMessageBox('Успешно', 'Пользователь ' + service_acc_name + ' успешно зарегистрирован')
+            self.close_window()
+            self.reset_auth()
             self.open_auth_form()
         except Exception as error:
             f.ShowMessageBox('Ошибка', str(error))
@@ -110,7 +125,7 @@ class Register(QMainWindow,register_form.Ui_MainWindow):
         return get_static_key_response.json()
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    app = QApplication([])
     reg = Register()
     reg.show()
     app.exec_()
