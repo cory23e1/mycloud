@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5 import QtCore, QtGui, QtWidgets
+
+import cloud_storage
 import cloud_storage_form
 from s3 import S3
 import funcs as f
@@ -32,6 +34,12 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
         self.OpenSettinsAction.triggered.connect(self.open_sett_win)
         self.change_curr_path_txt("")
         self.change_acc_btn.clicked.connect(self.logout)
+        self.make_new_folder_btn.clicked.connect(self.show_new_folder_dialog)
+
+    def show_new_folder_dialog(self):
+        f.put_val_in_local_storage('curr_path',self.current_path)
+        new_folder_dialog = ClssDialog(self)
+        new_folder_dialog.exec_()
 
     def set_current_user(self):
         try:
@@ -101,7 +109,7 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
             print("folder =", folder)
             print("files =", filenames)
             #загрузка файлов в бакет
-            S3.upload(None,'ist-pnipu-bucket', filenames)
+            S3.upload(None,'ist-pnipu-bucket', filenames,self.current_path)
             #обновление таблицы объектов
             self.fill_object_table(self.current_path, '')
             #вывод сообщения об успешной загрузке файлов
@@ -157,9 +165,20 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
                 if check == 2:
                     file_names.append(self.tv_cloudStorage.model().index(row, 1).data())
             if not all(item == 0 for item in file_names):
-                S3.delete('ist-pnipu-bucket', file_names, self.current_path)
-                self.fill_object_table(self.current_path, '')
-                f.ShowMessageBox("Удаление", 'Файлы '+str(file_names)+' , были удалены')
+                files_in_folders = []
+                for file in file_names:
+                    if '/' in file:
+                        data = S3.get_object_list('ist-pnipu-bucket',self.current_path+file,'')
+                        for item in data:
+                            files_in_folders.append(item['Key'])
+                        S3.delete('ist-pnipu-bucket',files_in_folders,'')
+                        self.fill_object_table(self.current_path, '')
+                        f.ShowMessageBox("Удаление", 'Файлы '+str(files_in_folders)+' , были удалены')
+                    else:
+                        S3.delete('ist-pnipu-bucket', file_names, self.current_path)
+                        f.ShowMessageBox("Удаление", 'Файлы ' + str(file_names) + ' , были удалены')
+                        self.fill_object_table(self.current_path, '')
+                        break
             elif self.selected_key != '':
                 file_names.append(self.selected_key)
                 S3.delete('ist-pnipu-bucket', file_names, '')
@@ -203,8 +222,9 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
             data = S3.get_object_list('ist-pnipu-bucket', directory, delimiter)
             for obj in data:
                 key_name = obj['Key']
-                object_owner = obj['Owner']['ID']
-                if object_owner == service_acc_id:
+                #object_owner = obj['Owner']['ID']
+                object_owner = ''
+                if object_owner == '':
                     # проверка есть ли сейчас что то в переменной текущего пути
                     if self.current_path == "":
                         # проверка является ли объект папкой
@@ -272,6 +292,28 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
         print('Текущий директория - ' + self.current_path)
         print('Текущий ключ - ' + self.current_key)
         self.fill_object_table(self.current_path, '')
+
+refresh_table = CloudStorage.fill_object_table
+
+class ClssDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super(ClssDialog, self).__init__(parent)
+        self.verticalLayout = QtWidgets.QVBoxLayout(self)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.pushButton = QtWidgets.QPushButton(self)
+        self.pushButton.setObjectName("pushButton")
+        self.pushButton.clicked.connect(self.make_folder)
+        self.line_edit = QtWidgets.QLineEdit(self)
+        self.verticalLayout.addWidget(self.line_edit)
+        self.verticalLayout.addWidget(self.pushButton)
+        self.setWindowTitle("Создать папку")
+        self.pushButton.setText("Создать")
+
+    def make_folder(self):
+        curr_path = f.get_val_in_local_storage('curr_path')
+        folder_name = self.line_edit.text()
+        S3.put(None,'ist-pnipu-bucket', curr_path+folder_name+"/")
+        self.close()
 
 def main():
     app = QApplication(sys.argv)
