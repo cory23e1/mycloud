@@ -3,7 +3,6 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-import cloud_storage
 import cloud_storage_form
 from s3 import S3
 import funcs as f
@@ -11,8 +10,9 @@ import os
 import settings
 import auth
 import sys
+import asyncio
 
-class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
+class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow):
     current_path = ''
     current_key = ''
     selected_key = ''
@@ -23,6 +23,7 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
         #super.__init__(self)
         self.setupUi(self)
         self.fill_object_table('', '')
+        #self.isLogged()
         self.set_current_user()
         self.tv_cloudStorage.doubleClicked.connect(self.open_folder_or_download_obj_by_dblclck)
         self.tv_cloudStorage.clicked.connect(self.select_table_row)
@@ -36,10 +37,25 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
         self.change_acc_btn.clicked.connect(self.logout)
         self.make_new_folder_btn.clicked.connect(self.show_new_folder_dialog)
 
+    # def isLogged(self):
+    #     login = f.get_val_in_local_storage('login')
+    #     password = f.get_val_in_local_storage('password')
+    #     if login == '' and password == '':
+    #         self.close_window()
+    #         auth_win = auth.Auth(self)
+    #         auth_win.show_window()
+    #     else:
+    #         self.fill_object_table('', '')
+
+
     def show_new_folder_dialog(self):
         f.put_val_in_local_storage('curr_path',self.current_path)
-        new_folder_dialog = ClssDialog(self)
+        new_folder_dialog = ClssDialog()
+        new_folder_dialog.window_closed.connect(self.refresh_object_table)
         new_folder_dialog.exec_()
+
+    def refresh_object_table(self):
+        self.fill_object_table(self.current_path,'')
 
     def set_current_user(self):
         try:
@@ -53,8 +69,16 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
         sett_win = settings.Settings(self)
         sett_win.show_window()
 
+    def reset_auth(self):
+        f.put_val_in_local_storage('service_acc_id', '')
+        f.put_val_in_local_storage('static_key_id', '')
+        f.put_val_in_local_storage('static_secret_key', '')
+        f.put_val_in_local_storage('login', '')
+        f.put_val_in_local_storage('password', '')
+
     #разлогиниться
     def logout(self):
+        self.reset_auth()
         self.close_window()
         auth_win = auth.Auth(self)
         auth_win.show_window()
@@ -138,17 +162,17 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
             #S3.download('ist-pnipu-bucket', file_names, file_names_without_dir)
             # проверка если один из чекбоксов поменял состояние
             if not all(item == 0 for item in file_names):
-                print(file_names)
+                #print(file_names)
                 # скачивание файлов из бакета
                 #S3.download('ist-pnipu-bucket', file_names, self.current_path)
-                S3.download('ist-pnipu-bucket', file_names, file_names_without_dir)
+                S3.download('ist-pnipu-bucket', file_names)
                 #обновление списка объектов
                 self.fill_object_table(self.current_path, '')
                 #вывод сообщения об успешном сохранении на локальный диск
-                #f.ShowMessageBox('Успешно','Файлы '+str(file_names)+' сохранены на локальный диск')
+                f.ShowMessageBox('Успешно','Файлы '+str(file_names)+' сохранены на локальный диск')
             elif self.selected_key != '':
                 file_names.append(self.selected_key)
-                S3.download('ist-pnipu-bucket', file_names, self.selected_key)
+                S3.download('ist-pnipu-bucket', file_names)
                 self.fill_object_table(self.current_path, '')
             else:
                 f.ShowMessageBox('Сохранение','Не выбраны файлы для сохранения')
@@ -217,14 +241,14 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
         self.tv_cloudStorage.header().resizeSection(0, 80)
         self.tv_cloudStorage.header().resizeSection(1, 300)
         service_acc_id = f.get_val_in_local_storage('service_acc_id')
+        current_login = f.get_val_in_local_storage('login')
         try:
             # получение объектов из бакета
             data = S3.get_object_list('ist-pnipu-bucket', directory, delimiter)
             for obj in data:
                 key_name = obj['Key']
-                #object_owner = obj['Owner']['ID']
-                object_owner = ''
-                if object_owner == '':
+                object_owner = obj['Owner']['ID']
+                if object_owner == service_acc_id or current_login=='admin':
                     # проверка есть ли сейчас что то в переменной текущего пути
                     if self.current_path == "":
                         # проверка является ли объект папкой
@@ -269,12 +293,18 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
             print('Текущий ключ - ' + self.current_key)
             self.fill_object_table(self.current_path, '')
         else:
-            file_names = []
-            file_names.append(self.current_path+object_name)
-            S3.download('ist-pnipu-bucket', file_names, object_name)
-            #saved_file_path = "C:/storage/"+self.current_path+object_name
-            saved_file_path = f.get_val_in_local_storage('local_path') + self.current_path + object_name
-            os.startfile(saved_file_path)
+            local_save_path = f.get_val_in_local_storage('local_path')
+            cloud_obj_name = self.current_path+object_name
+            cloud_obj_names = []
+            cloud_obj_names.append(cloud_obj_name)
+            S3.download('ist-pnipu-bucket', cloud_obj_names)
+
+            saved_file_path = local_save_path + object_name
+            # print(saved_file_path)
+            try:
+                os.startfile(saved_file_path)
+            except OSError:
+                f.ShowMessageBox('Ошибка','Невозможно запустить файл')
 
     def go_home(self):
         self.current_key = ''
@@ -296,6 +326,7 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow,QDialog):
 refresh_table = CloudStorage.fill_object_table
 
 class ClssDialog(QtWidgets.QDialog):
+    window_closed = pyqtSignal()
     def __init__(self, parent=None):
         super(ClssDialog, self).__init__(parent)
         self.verticalLayout = QtWidgets.QVBoxLayout(self)
@@ -309,15 +340,21 @@ class ClssDialog(QtWidgets.QDialog):
         self.setWindowTitle("Создать папку")
         self.pushButton.setText("Создать")
 
+    def closeEvent(self, event):
+        self.window_closed.emit()
+        event.accept()
+
     def make_folder(self):
         curr_path = f.get_val_in_local_storage('curr_path')
         folder_name = self.line_edit.text()
         S3.put(None,'ist-pnipu-bucket', curr_path+folder_name+"/")
         self.close()
+        cs = CloudStorage()
+        cs.fill_object_table(curr_path,'')
 
 def main():
     app = QApplication(sys.argv)
-    # app.setQuitOnLastWindowClosed(True)
+    app.setQuitOnLastWindowClosed(False)
     cs = CloudStorage()
     cs.show()
     app.exec_()

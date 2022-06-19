@@ -52,6 +52,7 @@ class Ui_MainWindow(object):
         font.setStrikeOut(False)
         self.password_txt.setFont(font)
         self.password_txt.setInputMask("")
+        self.password_txt.setEchoMode(QtWidgets.QLineEdit.Password)
         self.password_txt.setPlaceholderText("")
         self.password_txt.setObjectName("password_txt")
         self.register_btn = QtWidgets.QPushButton(self.centralwidget)

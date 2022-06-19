@@ -9,12 +9,11 @@ import register
 import cloud_storage
 import sys
 
-#class Auth(auth_form.Ui_MainWindow,QMainWindow):
 class Auth(auth_form.Ui_MainWindow,QMainWindow):
     def __init__(self,parent=None):
         QtWidgets.QWidget.__init__(self, parent)
-        self.setWindowFlags(QtCore.Qt.Window)
-        self.setWindowModality(QtCore.Qt.WindowModal)
+        # self.setWindowFlags(QtCore.Qt.Window)
+        # self.setWindowModality(QtCore.Qt.WindowModal)
         #super(Auth, self).__init__(parent)
         #super(Auth, self).__init__()
         self.setupUi(self)
@@ -88,7 +87,7 @@ class Auth(auth_form.Ui_MainWindow,QMainWindow):
             print(str(error))
 
 if __name__ == '__main__':
-    app = QApplication([])
+    app = QApplication(sys.argv)
     auth = Auth()
     auth.show()
     app.exec_()

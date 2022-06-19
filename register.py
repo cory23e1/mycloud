@@ -9,6 +9,7 @@ import funcs as f
 import auth
 import cloud_storage
 import sys
+import re
 
 class Register(register_form.Ui_MainWindow,QMainWindow):
     IAM_TOKEN = ''
@@ -29,6 +30,10 @@ class Register(register_form.Ui_MainWindow,QMainWindow):
         self.login_btn.clicked.connect(self.close_window)
         self.login_btn.clicked.connect(self.open_auth_form)
 
+    # def closeEvent(self,event):
+    #     self.open_auth_form()
+    #     event.accept()
+
     def cs_show(self):
         cs = cloud_storage
 
@@ -37,10 +42,6 @@ class Register(register_form.Ui_MainWindow,QMainWindow):
 
     def close_window(self):
         self.close()
-
-    def reset_auth(self):
-        f.put_val_in_local_storage('login','')
-        f.put_val_in_local_storage('password','')
 
     def open_auth_form(self):
         auth_win = auth.Auth(self)
@@ -56,22 +57,41 @@ class Register(register_form.Ui_MainWindow,QMainWindow):
     def add_acc_to_bd(self):
         try:
             iam = self.get_ouath_token()
-            service_acc_name = self.login_txt.text()
+            service_acc_name_aka_login = self.login_txt.text()
             password = self.password_txt.text()
             role = self.role_cmb.currentIndex() + 1
             fio = self.fio_txt.text()
-            created_acc = self.create_new_service_acc(iam, service_acc_name, '')
-            service_acc_id = created_acc['accessKey']['serviceAccountId']
-            static_key_id = created_acc['accessKey']['keyId']
-            static_secret_key = created_acc['secret']
-            # print(service_acc_id)
-            fields = ['login', 'password', 'role', 'fio', 'service_acc_id', 'static_key_id', 'static_secret_key']
-            values = [service_acc_name, password, role, fio, service_acc_id, static_key_id, static_secret_key]
-            database.SQL.insert('', fields, values, 'accounts')
-            f.ShowMessageBox('Успешно', 'Пользователь ' + service_acc_name + ' успешно зарегистрирован')
-            self.close_window()
-            self.reset_auth()
-            self.open_auth_form()
+            if service_acc_name_aka_login!='' and password!='' and role!='' and fio!='':
+                if not re.search(r'[^a-zA-Z а-яА-ЯёЁ]',fio):
+                    if not service_acc_name_aka_login[0].isdigit():
+                        if not set('.,[~!@#$%^&*()_+{}":;\']+$').intersection(service_acc_name_aka_login):
+                            response = database.SQL.select('','accounts','id','login',service_acc_name_aka_login)
+                            if len(response)==0:
+                                if not set('.,[~!@#$%^&*()_+{}":;\']+$').intersection(password):
+                                    created_acc = self.create_new_service_acc(iam, service_acc_name_aka_login, '')
+                                    service_acc_id = created_acc['accessKey']['serviceAccountId']
+                                    static_key_id = created_acc['accessKey']['keyId']
+                                    static_secret_key = created_acc['secret']
+                                    # print(service_acc_id)
+                                    fields = ['login', 'password', 'role', 'fio', 'service_acc_id', 'static_key_id', 'static_secret_key']
+                                    values = [service_acc_name_aka_login, password, role, fio, service_acc_id, static_key_id, static_secret_key]
+                                    database.SQL.insert('', fields, values, 'accounts')
+                                    f.ShowMessageBox('Успешно', 'Пользователь ' + service_acc_name_aka_login + ' успешно зарегистрирован')
+                                    self.close_window()
+                                    #self.reset_auth()
+                                    self.open_auth_form()
+                                else:
+                                    f.ShowMessageBox('Ошибка', 'В пароле использованы запрещеные символы!')
+                            else:
+                                f.ShowMessageBox('Ошибка', 'Логин '+service_acc_name_aka_login+' уже существует!')
+                        else:
+                            f.ShowMessageBox('Ошибка', 'В логине использованы запрещеные символы!')
+                    else:
+                        f.ShowMessageBox('Ошибка', 'Логин не может начинаться с цифры!')
+                else:
+                    f.ShowMessageBox('Ошибка', 'Фио должно содержать только буквы')
+            else:
+                f.ShowMessageBox('Ошибка','Не все поля заполнены!')
         except Exception as error:
             f.ShowMessageBox('Ошибка', str(error))
         # db.dat = database
@@ -86,6 +106,32 @@ class Register(register_form.Ui_MainWindow,QMainWindow):
         return IAM_TOKEN
         # {"name": "ggfgu", "description": "uioyh8uoyhu", "folderId": "b1g26uu7lpnb4jo3ph8v",
         # "rolesFolderId": "b1g26uu7lpnb4jo3ph8v", "roles": ["storage.uploader", "storage.viewer"]}
+
+    def send_soap(self):
+        url = "https://storage.yandexcloud.net/ist-pnipu-bucket/b1g26uu7lpnb4jo3ph8v?lifecycle"
+        headers = {'content-type': 'text/xml'}
+        body = """<?xml version="1.0" encoding="utf-8"?>
+                 <LifecycleConfiguration>
+                    <Rule>
+                        <ID>Переместить и потом удалить</ID>
+                        <Status>Enabled</Status>
+                        <Filter>
+                           <Prefix></Prefix>
+                        </Filter>
+                        <Transition>
+                            <StorageClass>COLD</StorageClass>
+                            <Days>30</Days>
+                        </Transition>
+                        <Expiration>
+                            <Days>365</Days>
+                        </Expiration>
+                        <AbortIncompleteMultipartUpload>
+                            <DaysAfterInitiation>5</DaysAfterInitiation>
+                        </AbortIncompleteMultipartUpload>
+                    </Rule>
+                </LifecycleConfiguration>"""
+        response = requests.post(url, data=body, headers=headers)
+        print(response.content)
 
     def create_new_service_acc(self, iam_token, login, description):
         headers = {'Authorization': f'Bearer {iam_token}'}

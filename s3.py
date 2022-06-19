@@ -3,6 +3,11 @@ import os
 from pathlib import Path
 import glob
 import funcs as f
+import re
+import aioboto3
+import asyncio
+import concurrent.futures
+import functools
 
 class S3():
     # static_key_id = f.get_val_in_local_storage('static_key_id')
@@ -34,6 +39,18 @@ class S3():
             endpoint_url='https://storage.yandexcloud.net'
         )
         return client
+
+    def resource(self):
+        static_key_id = f.get_val_in_local_storage('static_key_id')
+        static_secret_key = f.get_val_in_local_storage('static_secret_key')
+        resource = boto3.resource(
+            's3',
+            aws_access_key_id=static_key_id,
+            aws_secret_access_key=static_secret_key,
+            region_name='ru-central1',
+            endpoint_url='https://storage.yandexcloud.net'
+        )
+        return resource
 
     def upload_dir(localDir, awsInitDir, bucketName, tag, prefix):
         client = S3.client(None)
@@ -76,29 +93,28 @@ class S3():
         #print(objects)
         return objects
 
-    def download(bucket_name,objects,object_name):
-        client = S3.client(None)
+    def download_s3_folder(bucket_name, s3_folder, local_dir=None):
+        resource = S3.resource(None)
+        bucket = resource.Bucket(bucket_name)
+        for obj in bucket.objects.filter(Prefix=s3_folder):
+            target = local_dir+obj.key
+            if not os.path.exists(os.path.dirname(target)):
+                os.makedirs(os.path.dirname(target))
+            if obj.key[-1] == '/':
+                continue
+            bucket.download_file(obj.key, target)
 
-        for object_path in objects:
-            #print(object_path, objjj)
-            local_path = f.get_val_in_local_storage('local_path')+object_path
-            local_path_without_obj_name = local_path.replace(object_path,'')
-            print(local_path)
-            print(local_path_without_obj_name)
-            #print(local_path_without_obj_name)
-            # если папки не существует
-            if not os.path.exists(local_path_without_obj_name):
-                # print(object_path)
-                # print(local_path)
-                os.makedirs(local_path_without_obj_name)
-                #client.download_file(bucket_name, object_path, local_path)
+    def download(bucket_name,objects):
+        client = S3.client(None)
+        local_path = f.get_val_in_local_storage('local_path')
+        #print(objects)
+        for item in objects:
+            if '/' in item:
+                S3.download_s3_folder('ist-pnipu-bucket', item,local_path)
             else:
-                # если файла не существует
-                if not os.path.isfile(local_path):
-                    pass
-                    #client.download_file(bucket_name, object_path, local_path)
-                else:
-                    print('файл '+object_path+ ' существует')
+                cloud_object_name = str(item).split('/')
+                formated_obj_name = cloud_object_name[len(cloud_object_name)-1]
+                client.download_file(bucket_name, item, local_path+formated_obj_name)
 
     def put(self,bucket_name,object):
         client = S3.client(None)
@@ -160,4 +176,6 @@ class S3():
     #upload_dir('E:/temp/emu8086','2022/','ist-pnipu-bucket','*','')
     #uploadDirectory('E:/torrent/content/Thinstall','ist-pnipu-bucket')
 
-
+    # loop = asyncio.get_event_loop()
+    # data = loop.run_until_complete(get_object_list('ist-pnipu-bucket', '', ''))
+    # loop.close() # I had to skip this line, though I expect that was an issue with jupyter maybe.
