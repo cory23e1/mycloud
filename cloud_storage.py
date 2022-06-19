@@ -73,8 +73,8 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow):
         f.put_val_in_local_storage('service_acc_id', '')
         f.put_val_in_local_storage('static_key_id', '')
         f.put_val_in_local_storage('static_secret_key', '')
-        f.put_val_in_local_storage('login', '')
-        f.put_val_in_local_storage('password', '')
+        #f.put_val_in_local_storage('login', '')
+        #f.put_val_in_local_storage('password', '')
 
     #разлогиниться
     def logout(self):
