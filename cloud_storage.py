@@ -297,10 +297,10 @@ class CloudStorage(cloud_storage_form.Ui_MainWindow,QMainWindow):
             cloud_obj_name = self.current_path+object_name
             cloud_obj_names = []
             cloud_obj_names.append(cloud_obj_name)
+            print(cloud_obj_name)
             S3.download('ist-pnipu-bucket', cloud_obj_names)
-
-            saved_file_path = local_save_path + object_name
-            # print(saved_file_path)
+            saved_file_path = local_save_path + self.current_path+object_name
+            print('это из клауд сторадж '+saved_file_path)
             try:
                 os.startfile(saved_file_path)
             except OSError:

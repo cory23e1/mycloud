@@ -4,4 +4,4 @@
 'login', (1536, 15)
 'local_path', (2048, 20)
 'password', (2560, 13)
-'curr_path', (3072, 18)
+'curr_path', (3072, 10)

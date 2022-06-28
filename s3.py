@@ -104,7 +104,7 @@ class S3():
                 continue
             bucket.download_file(obj.key, target)
 
-    def download(bucket_name,objects):
+    def download(bucket_name,objects,single=None):
         client = S3.client(None)
         local_path = f.get_val_in_local_storage('local_path')
         #print(objects)
@@ -114,6 +114,7 @@ class S3():
             else:
                 cloud_object_name = str(item).split('/')
                 formated_obj_name = cloud_object_name[len(cloud_object_name)-1]
+                print('это из s3 '+local_path+formated_obj_name)
                 client.download_file(bucket_name, item, local_path+formated_obj_name)
 
     def put(self,bucket_name,object):
